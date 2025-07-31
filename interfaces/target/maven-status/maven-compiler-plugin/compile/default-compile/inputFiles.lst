@@ -1,0 +1,11 @@
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/IAuthenticationController.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/ICore.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/IIOController.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/IPlugin.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/IPluginController.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/IUIController.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/database/IEntity.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/database/annotations/Column.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/database/annotations/PrimaryKey.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/database/annotations/Table.java
+/home/slopes/Distroboxes/Javafx/workspace/INF008-TRAB2/microkernel/interfaces/src/main/java/br/edu/ifba/inf008/interfaces/database/exceptions/TableNotAnnotatedException.java
