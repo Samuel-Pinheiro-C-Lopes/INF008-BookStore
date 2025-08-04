@@ -1,8 +1,8 @@
 package br.edu.ifba.inf008.plugins;
 
-import br.edu.ifba.inf008.interfaces.IPlugin;
-import br.edu.ifba.inf008.interfaces.ICore;
-import br.edu.ifba.inf008.interfaces.IUIController;
+import br.edu.ifba.inf008.interfaces.controller.IPlugin;
+import br.edu.ifba.inf008.interfaces.controller.ICore;
+import br.edu.ifba.inf008.interfaces.controller.IUIController;
 
 import javafx.scene.control.MenuItem;
 import javafx.event.EventHandler;
@@ -28,5 +28,10 @@ public class MyPlugin implements IPlugin
         uiController.createTab("new tab", new Rectangle(200,200, Color.LIGHTSTEELBLUE));
 
         return true;
+    }
+
+    @Override
+    public boolean getCanHandle(Class<?> clazz) {
+        return clazz == MyPlugin.class;
     }
 }

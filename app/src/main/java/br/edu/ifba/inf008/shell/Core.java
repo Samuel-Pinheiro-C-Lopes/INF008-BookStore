@@ -1,50 +1,97 @@
 package br.edu.ifba.inf008.shell;
 
-import br.edu.ifba.inf008.interfaces.*;
+import br.edu.ifba.inf008.interfaces.controller.*;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 
 public class Core extends ICore
 {
-    // singleton
+    private final IDatabaseController databaseController = new DatabaseController("jdbc:mariadb://localhost:3306/bookstore", "root", "root");
+    private final IPluginController pluginController;
+    private final IUIController uiController;
 
     private Core() {}
 
     public static boolean init() {
-        if (instance != null) {
-            System.out.println("Fatal error: " + Core.class.getSimpleName() + " is already initialized!");
-            System.exit(-1);
-        }
+        checkPreInit();
 
         instance = new Core();
 
-        instance.getIOController().test();
-
-        UIController.launch(UIController.class);
-
-        if (instance.getPluginController().init() == false)
-            System.out.println("\n\n\nERROR\n\n\n");
+        pluginController = initializePluginController();
+        databaseController = initializeDatabaseController();
+        uiController = initializeUIController();
 
         return true;
     }
 
     public IUIController getUIController() {
-        return UIController.getInstance();
-    }
-
-    public IAuthenticationController getAuthenticationController() {
-        return authenticationController;
-    }
-
-    public IIOController getIOController() {
-        return ioController;
+        return uiController;
     }
 
     public IPluginController getPluginController() {
         return pluginController;
     }
 
-    private final IAuthenticationController authenticationController = new AuthenticationController();
-    private final IIOController ioController = new IOController();
-    private final IPluginController pluginController = new PluginController();
+    public IDatabaseController getDatabaseController() {
+        return databaseController;
+    }
+
+    private static IDatabaseController initializeDatabaseController() {
+        final IDatabaseController controller;
+
+        if (DatabaseController.init("jdbc:mariadb://localhost:3306/bookstore", "root", "root") == false) {
+            System.err.println("Fatal error: " + DatabaseController.class.getSimpleName() + " couldn't be initialized!");
+            System.exit(-1);
+        }
+
+        controller = DatabaseController.getInstance();
+
+        if (controller == null) {
+            System.err.println("Fatal error: " + DatabaseController.class.getSimpleName() + " instance is null after being initialized!");
+            System.exit(-1);
+        }
+
+        return controller;
+    }
+
+    private static IPluginController initializePluginController() {
+        final IPluginController controller;
+
+        if (PluginController.init() == false) {
+            System.err.println("Fatal error: " + PluginController.class.getSimpleName() + " couldn't be initialized!");
+            System.exit(-1);
+        }
+
+        controller = PluginController.getInstance();
+
+        if (controller == null) {
+            System.err.println("Fatal error: " + PluginController.class.getSimpleName() + " instance is null after being initialized!");
+            System.exit(-1);
+        }
+
+        return controller;
+    }
+
+    private static IUIController intiializeUIController() {
+        final IUIController controller;
+
+        UIController.launch(UIController.class);
+
+        controller = UIController.getInstance();
+
+        if (controller == null) {
+            System.err.println("Fatal error: " + UIController.class.getSimpleName() + " instance is null after being initialized!");
+            System.exit(-1);
+        }
+
+        return controller;
+    }
+
+    private static void checkPreInit() {
+        if (instance != null) {
+            System.err.println("Fatal error: " + Core.class.getSimpleName() + " is already initialized!");
+            System.exit(-1);
+        }
+    }
 }

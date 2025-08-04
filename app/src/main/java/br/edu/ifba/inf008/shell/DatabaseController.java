@@ -1,20 +1,21 @@
 package br.edu.ifba.inf008.shell;
 
-import br.edu.ifba.inf008.interfaces.IDatabaseController;
+import br.edu.ifba.inf008.interfaces.controller.IDatabaseController;
 
 import java.sql.*;
 
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 public class DatabaseController implements IDatabaseController {
-    private final String url = "jdbc:mariadb://localhost:3306/bookstore";
-    private final String user = "root";
-    private final String password = "root";
-    private static IDatabaseController instance = null;
+    private static DatabaseController instance = null;
+    private final String url;
+    private final String user;
+    private final String password;
 
-    public static IDatabaseController getInstance() {
-        return instance;
-    }
-
-    public static void init(
+    public static boolean init(
         String url,
         String user,
         String password
@@ -22,7 +23,11 @@ public class DatabaseController implements IDatabaseController {
         instance = new DatabaseController(url, user, password);
     }
 
-    protected DatabaseController(
+    public DatabaseController getInstance() {
+        return instance;
+    }
+
+    private DatabaseController(
         String url,
         String user,
         String password
@@ -37,8 +42,8 @@ public class DatabaseController implements IDatabaseController {
         Object scalarReturn = null;
 
         try (
-            Connection conn = DriverManager.getConnection(url, user, password),
-            Statement stmt = conn.createStatement(),
+            Connection conn = DriverManager.getConnection(url, user, password);
+            Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query)
         ) {
             if (rs.next())
@@ -58,8 +63,8 @@ public class DatabaseController implements IDatabaseController {
         int i;
 
         try (
-            Connection conn = DriverManager.getConnection(url, user, password),
-            Statement stmt = conn.createStatement(),
+            Connection conn = DriverManager.getConnection(url, user, password);
+            Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query)
         ) {
             ResultSetMetaData rsmeta = rs.getMetaData();
@@ -78,6 +83,7 @@ public class DatabaseController implements IDatabaseController {
 
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
 
         return resultRows;
@@ -88,7 +94,7 @@ public class DatabaseController implements IDatabaseController {
         int returnValue = -1;
 
         try (
-            Connection conn = DriverManager.getConnection(url, user, password),
+            Connection conn = DriverManager.getConnection(url, user, password);
             Statement stmt = conn.createStatement()
         ) {
             returnValue = stmt.executeUpdate(query);
@@ -97,5 +103,11 @@ public class DatabaseController implements IDatabaseController {
         }
 
         return returnValue;
+    }
+
+    private static boolean checkPreInit() {
+        if (instance != null)
+            return false;
+        return true;
     }
 }

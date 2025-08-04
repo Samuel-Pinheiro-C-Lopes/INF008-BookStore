@@ -1,7 +1,7 @@
 package br.edu.ifba.inf008.shell;
 
-import br.edu.ifba.inf008.interfaces.IUIController;
-import br.edu.ifba.inf008.interfaces.ICore;
+import br.edu.ifba.inf008.interfaces.controller.IUIController;
+import br.edu.ifba.inf008.interfaces.controller.ICore;
 import br.edu.ifba.inf008.shell.PluginController;
 
 import javafx.application.Application;
@@ -19,10 +19,12 @@ import javafx.scene.Node;
 
 public class UIController extends Application implements IUIController
 {
-    private ICore core;
+    private static final UIController uiController;
+    private final ICore core;
+    private final IPluginController pluginController;
     private MenuBar menuBar;
     private TabPane tabPane;
-    private static UIController uiController;
+
 
     public UIController() { }
 
@@ -65,6 +67,7 @@ public class UIController extends Application implements IUIController
                 break;
             }
         }
+
         if (newMenu == null) {
             newMenu = new Menu(menuText);
             menuBar.getMenus().add(newMenu);

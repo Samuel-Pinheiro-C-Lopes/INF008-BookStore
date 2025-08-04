@@ -1,6 +1,6 @@
 package br.edu.ifba.inf008.shell;
 
-import br.edu.ifba.inf008.interfaces.IAuthenticationController;
+import br.edu.ifba.inf008.interfaces.controller.IAuthenticationController;
 
 class AuthenticationController implements IAuthenticationController
 {
