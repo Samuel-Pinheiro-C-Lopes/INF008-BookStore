@@ -15,6 +15,10 @@
         <module>interfaces/controller</module>
         <module>app</module>
         <module>plugins/myplugin</module>
+        <module>plugins/books</module>
+        <module>plugins/loans</module>
+        <module>plugins/users</module>
+        <module>plugins/booksinloan</module>
     </modules>
 
     <properties>

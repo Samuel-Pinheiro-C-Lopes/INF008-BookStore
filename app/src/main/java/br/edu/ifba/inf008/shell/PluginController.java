@@ -7,12 +7,12 @@ import br.edu.ifba.inf008.interfaces.controller.IPlugin;
 import br.edu.ifba.inf008.interfaces.controller.ICore;
 
 import br.edu.ifba.inf008.interfaces.database.IDatabasePlugin;
-import br.edu.ifba.inf008.interfaces.database.IFormPlugin;
-import br.edu.ifba.inf008.interfaces.database.IGridPlugin;
+import br.edu.ifba.inf008.interfaces.form.IFormPlugin;
+import br.edu.ifba.inf008.interfaces.grid.IGridPlugin;
 
 import br.edu.ifba.inf008.interfaces.database.IEntity;
-import br.edu.ifba.inf008.interfaces.database.IForm;
-import br.edu.ifba.inf008.interfaces.database.IGrid;
+import br.edu.ifba.inf008.interfaces.form.IForm;
+import br.edu.ifba.inf008.interfaces.grid.IGrid;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -26,52 +26,46 @@ import java.net.URLClassLoader;
 
 class PluginController implements IPluginController
 {
-    private static PluginController instance = null;
+    private static volatile PluginController instance = null;
 
     public static PluginController getInstance() {
+        synchronized (PluginController.class) {
+            if (instance == null)
+                 instance = new PluginController();
+                 instance.init();
+        }
+
         return instance;
     }
 
-    public static boolean init() {
-        final PluginController newInstance = new PluginController();
-
-        final valid = newInstance.loadPlugins();
-
-        if (valid == true)
-            instance = newInstance;
-
-        return valid;
+    @Override
+    public boolean init() {
+        return instance.loadPlugins();
     }
 
     private PluginController() { }
 
     private final List<IPlugin> plugins = new Vector<>();
 
-    public List<IFormPlugin> getHandlers() {
-        final List<IFormPlugin> formPlugins = new ArrayList<>(plugins.size());
-
-        for (IPlugin plugin : pĺugins)
-            if (plugin.canHandle(IForm.class))
-                formPlugins.add(plugin);
-
-        return formPlugins;
+    @Override
+    public void initHandlers() {
+        for (IPlugin plugin : plugins)
+            if (plugin instanceof IFormPlugin)
+                ((IFormPlugin)plugin).initForm();
     }
 
-    public List<IGridPlugin> getViewables() {
-        final List<IGridPlugin> gridPlugins = new ArrayList<>(plugins.size());
-
-        for (IPlugin plugin : pĺugins)
-            if (plugin.canHandle(IGrid.class))
-                gridPlugins.add(plugin);
-
-        return gridPlugins;
+    @Override
+    public void initViewables() {
+        for (IPlugin plugin : plugins)
+            if (plugin instanceof IGridPlugin)
+                ((IGridPlugin)plugin).initGrid();
     }
 
     public boolean loadPlugins() {
         final File currentDir = new File("../plugins");
         final FilenameFilter jarFilter;
         final URLClassLoader ulc;
-        final String[] plugins;
+        final String[] loadedPlugins;
         final URL[] jars;
         String pluginName;
         Class<?> clazz;
@@ -87,19 +81,22 @@ class PluginController implements IPluginController
                 }
             };
 
-            plugins = currentDir.list(jarFilter);
-            jars = new URL[plugins.length];
+            loadedPlugins = currentDir.list(jarFilter);
+            jars = new URL[loadedPlugins.length];
 
-            for (i = 0; i < plugins.length; i++)
-                jars[i] = (new File("../plugins/" + plugins[i])).toURL();
+            for (i = 0; i < loadedPlugins.length; i++)
+                jars[i] = (new File("../plugins/" + loadedPlugins[i])).toURL();
 
             ulc = new URLClassLoader(jars, App.class.getClassLoader());
 
-            for (i = 0; i < plugins.length; i++) {
-                pluginName = plugins[i].split("\\.")[0];
+            for (i = 0; i < loadedPlugins.length; i++) {
+                pluginName = loadedPlugins[i].split("\\.")[0];
+
                 clazz = Class.forName("br.edu.ifba.inf008.plugins." + pluginName, true, ulc);
+
                 plugin = (IPlugin) Class.forName("br.edu.ifba.inf008.plugins." + pluginName, true, ulc).newInstance();
-                plugins.add(plugin);
+
+                this.plugins.add(plugin);
             }
 
             return true;
@@ -110,10 +107,4 @@ class PluginController implements IPluginController
         }
     }
 
-
-    private static boolean checkPreInit() {
-        if (instance != null)
-            return false;
-        return true;
-    }
 }

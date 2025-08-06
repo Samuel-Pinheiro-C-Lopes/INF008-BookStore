@@ -7,7 +7,7 @@ public abstract class ICore
     }
 
     public abstract IUIController getUIController();
-    public abstract IAuthenticationController getAuthenticationController();
+    public abstract IDatabaseController getDatabaseController();
     public abstract IPluginController getPluginController();
 
     protected static ICore instance = null;

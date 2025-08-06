@@ -2,17 +2,73 @@ package br.edu.ifba.inf008.interfaces.database;
 
 import br.edu.ifba.inf008.interfaces.database.annotations.*;
 import br.edu.ifba.inf008.interfaces.database.exceptions.*;
+import br.edu.ifba.inf008.interfaces.database.util.*;
+
+import java.lang.Thread;
+import java.lang.StackTraceElement;
 
 import java.lang.reflect.Field;
 import java.lang.StringBuilder;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public interface IEntity {
 
-    default String getSelectQuery() {
+    default Field getPrimaryKeyField() {
+        Field pkField = null;
+
+        try {
+            Column column = null;
+
+            for (final Field field : this.getClass().getDeclaredFields()) {
+                column = field.getAnnotation(Column.class);
+
+                if (column != null && column.primaryKey()) {
+                    pkField = field;
+                    pkField.setAccessible(true);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            final StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
+
+            System.err.println("Exception: [" + e.getClass().getName() + "] with message [" + e.getMessage() + "] when trying to get primary key from instance while executing [" + stackTraces[1].getMethodName() + "] called from [" + stackTraces[2].getMethodName() + "].");
+
+            return null;
+        }
+
+        return pkField;
+    }
+
+    default Object getPrimaryKey() {
+        Object primaryKey = null;
+        Column column = null;
+
+        try {
+            for (final Field field : this.getClass().getDeclaredFields()) {
+                column = field.getAnnotation(Column.class);
+
+                if (column != null && column.primaryKey()) {
+                    field.setAccessible(true);
+                    primaryKey = field.get(this);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            final StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
+
+            System.err.println("Exception: [" + e.getClass().getName() + "] with message [" + e.getMessage() + "] when trying to get primary key from instance while executing [" + stackTraces[1].getMethodName() + "] called from [" + stackTraces[2].getMethodName() + "].");
+        }
+
+        return primaryKey;
+    }
+
+    default QueryData getSelectQuery() {
         final StringBuilder selectQueryBuilder = new StringBuilder();
+        final List<Object> parameters = new ArrayList<>();
         final String tableName;
         Column column = null;
         Column pkColumn = null;
@@ -32,7 +88,6 @@ public interface IEntity {
                 if (column.primaryKey()) {
                     pkColumn = column;
                     pkField = field;
-                    continue;
                 }
 
                 selectQueryBuilder.append(column.name())
@@ -45,13 +100,16 @@ public interface IEntity {
                               .append(tableName);
 
             if (pkField != null && pkColumn != null) {
+                pkField.setAccessible(true);
                 Object val = pkField.get(this);
 
-                if (val != null)
+                if (val != null) {
                     selectQueryBuilder.append(" WHERE ")
                                     .append(pkColumn.name())
-                                    .append(" = ")
-                                    .append(IEntity.toSqlValue(pkField, val.toString()));
+                                    .append(" = ?;");
+
+                    parameters.add(pkField.get(this));
+                }
             }
 
             selectQueryBuilder.append(";");
@@ -61,13 +119,15 @@ public interface IEntity {
             return null;
         }
 
-        return selectQueryBuilder.toString();
+        final QueryData queryData = new QueryData(selectQueryBuilder.toString(), parameters);
+        return queryData;
     }
 
-    default String getInsertQuery() {
+    default QueryData getInsertQuery() {
         final StringBuilder insertQueryBuilder = new StringBuilder();
         final StringBuilder insertColumnsBuilder = new StringBuilder();
         final StringBuilder insertValuesBuilder = new StringBuilder();
+        final List<Object> parameters = new ArrayList<>();
         final String tableName;
         Column column = null;
         Column pkColumn = null;
@@ -102,9 +162,16 @@ public interface IEntity {
 
                 insertColumnsBuilder.append(entry.getKey())
                                     .append(", ");
-                insertValuesBuilder.append(IEntity.toSqlValue(field, field.get(this)))
-                                   .append(", ");
+
+                insertValuesBuilder.append("?, ");
+
+                field.setAccessible(true);
+                final Object value = field.get(this);
+                if (value instanceof IEntity)
+                    parameters.add(((IEntity)value).getPrimaryKey());
+                else parameters.add(value);
             }
+
             IEntity.removeUnnecessaryEnding(insertColumnsBuilder);
             IEntity.removeUnnecessaryEnding(insertValuesBuilder);
 
@@ -119,11 +186,13 @@ public interface IEntity {
             return null;
         }
 
-        return insertQueryBuilder.toString();
+        final QueryData queryData = new QueryData(insertQueryBuilder.toString(), parameters);
+        return queryData;
     }
 
-    default String getUpdateQuery() {
+    default QueryData getUpdateQuery() {
         final StringBuilder updateQueryBuilder = new StringBuilder();
+        final List<Object> parameters = new ArrayList<>();
         final String tableName;
         Column column = null;
         Column pkColumn = null;
@@ -149,10 +218,13 @@ public interface IEntity {
                 }
 
                 updateQueryBuilder.append(column.name())
-                                  .append(" = ")
-                                  .append(IEntity.toSqlValue(field, field.get(this).toString()))
-                                  .append(", ");
+                                  .append(" = ?, ");
 
+                field.setAccessible(true);
+                final Object value = field.get(this);
+                if (value instanceof IEntity)
+                    parameters.add(((IEntity)value).getPrimaryKey());
+                else parameters.add(value);
             }
 
             if (pkField == null)
@@ -162,20 +234,23 @@ public interface IEntity {
 
             updateQueryBuilder.append(" WHERE ")
                               .append(pkColumn.name())
-                              .append(" = ")
-                              .append(IEntity.toSqlValue(pkField, pkField.get(this).toString()))
-                              .append(";");
+                              .append(" = ?;");
+
+            pkField.setAccessible(true);
+            parameters.add(pkField.get(this));
 
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
 
-        return updateQueryBuilder.toString();
+        final QueryData queryData = new QueryData(updateQueryBuilder.toString(), parameters);
+        return queryData;
     }
 
-    default String getDeleteQuery() {
+    default QueryData getDeleteQuery() {
         final StringBuilder deleteQueryBuilder = new StringBuilder();
+        final List<Object> parameters = new ArrayList<>();
         final String tableName;
         Column column = null;
         Column pkColumn = null;
@@ -206,16 +281,18 @@ public interface IEntity {
                 .append(tableName)
                 .append(" WHERE ")
                 .append(pkColumn.name())
-                .append(" = ")
-                .append(IEntity.toSqlValue(pkField, pkField.get(this).toString()))
-                .append(";");
+                .append(" = ?;");
+
+            pkField.setAccessible(true);
+            parameters.add(pkField.get(this));
 
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
 
-        return deleteQueryBuilder.toString();
+        final QueryData queryData = new QueryData(deleteQueryBuilder.toString(), parameters);
+        return queryData;
     }
 
     // helper method to fetch table name
@@ -234,7 +311,11 @@ public interface IEntity {
         if (length > 2)
             builder.setLength(length - 2);
     }
+}
 
+
+/*
+THIS IS STILL PRONE TO SQL INJECTION
     // helper method to map Java types to MariaDB types
     private static String mapJavaTypeToSqlType(final Class<?> type) throws IllegalArgumentException {
         if (type == String.class || type == Character.class) return "CHAR";
@@ -247,14 +328,31 @@ public interface IEntity {
         if (java.util.Date.class.isAssignableFrom(type)) return "DATE";
         if (java.time.temporal.Temporal.class.isAssignableFrom(type)) return "DATE";
         if (type.isEnum()) return "CHAR"; // assuming enum name storage
+
+        // gets primary key type
+        if (IEntity.class.isAssignableFrom(type)) {
+            final IEntity instance;
+
+            try {
+                instance = type.getConstructor().newInstance();
+            } catch (Exception e) {
+                StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
+
+                throw new IllegalArgumentException("Attempt to fetch IEntity primary key type for: [" + type.getName() + "] failed with [" + e.getClass().getName() + "] exception with message [" + e.getMessage() + "]. Error occurred in [" + stackTraces[1].getMethodName() + "] from [" + stackTraces[2].getMethodName() + "] call from [" + stackTraces[3].getMethodName() + "] call.");
+            }
+
+            return mapJavaTypeToSqlType(instance.getPrimaryKey().getClass());
+        }
+
         throw new IllegalArgumentException("Unsupported type: " + type.getName());
     }
 
     // helper method to add safety against sql injection when dealing
     // with input from user
-    private static String toSqlValue(final Field field, final Object value) throws IllegalArgumentException {
-        if (value == null)
-            return "NULL";
+    private static String toSqlValue(final Field field, Object value) throws IllegalArgumentException {
+        if (value instanceof IEntity) value = ((IEntity) value).getPrimaryKey();
+
+        if (value == null) return "NULL";
 
         final String sqlType = mapJavaTypeToSqlType(field.getType());
 
@@ -262,4 +360,5 @@ public interface IEntity {
 
         return "CAST('" + stringValue + "' AS " + sqlType + ")";
     }
-}
+
+    */

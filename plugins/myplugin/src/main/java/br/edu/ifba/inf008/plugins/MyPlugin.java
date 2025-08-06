@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 public class MyPlugin implements IPlugin
 {
     public boolean init() {
+    /*
         IUIController uiController = ICore.getInstance().getUIController();
 
         System.out.println("\n\n\n\n\nTESTING\n\n\n\n\n");
@@ -28,10 +29,8 @@ public class MyPlugin implements IPlugin
         uiController.createTab("new tab", new Rectangle(200,200, Color.LIGHTSTEELBLUE));
 
         return true;
-    }
-
-    @Override
-    public boolean getCanHandle(Class<?> clazz) {
-        return clazz == MyPlugin.class;
+        */
+        System.out.println("\n\n\n\n\nTESTING\n\n\n\n\n");
+        return true;
     }
 }
